@@ -1,17 +1,10 @@
 {
     "name": "Tududi Development Environment",
-    "dockerFile": "Dockerfile",
     "build": {
         "context": ".",
-        "dockerfile": "Dockerfile.devcontainer"
+        "dockerfile": "Dockerfile"
     },
-    "features": {
-        // "ghcr.io/devcontainers/features/node:1": {
-        //     "version": "22"
-        // },
-        // "ghcr.io/devcontainers/features/git:1": {}
-        // "ghcr.io/devcontainers/features/docker-in-docker:2": {}
-    },
+    "features": {},
     "customizations": {
         "vscode": {
             "extensions": [
@@ -52,7 +45,6 @@
             }
         }
     },
-    // "remoteUser": "vscode",
     "forwardPorts": [3002, 8080],
     "portsAttributes": {
         "3002": {
@@ -64,6 +56,6 @@
             "label": "Frontend"
         }
     },
-    "postCreateCommand": "/app/.devcontainer/scripts/post-create.sh",
-    "postStartCommand": "/app/.devcontainer/scripts/post-start.sh"
+    "postCreateCommand": "chmod +x .devcontainer/scripts/post-create.sh && .devcontainer/scripts/post-create.sh",
+    "postStartCommand": "chmod +x .devcontainer/scripts/post-start.sh && .devcontainer/scripts/post-start.sh"
 }
