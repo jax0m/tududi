@@ -1,7 +1,6 @@
 {
     "name": "Tududi Development Environment",
     "build": {
-        "context": ".",
         "dockerfile": "Dockerfile"
     },
     "features": {},
@@ -56,6 +55,5 @@
             "label": "Frontend"
         }
     },
-    "postCreateCommand": "chmod +x .devcontainer/scripts/post-create.sh && .devcontainer/scripts/post-create.sh",
-    "postStartCommand": "chmod +x .devcontainer/scripts/post-start.sh && .devcontainer/scripts/post-start.sh"
+    "postCreateCommand": "chmod +x .devcontainer/post-create.sh; .devcontainer/post-create.sh"
 }
