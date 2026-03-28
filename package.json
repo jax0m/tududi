@@ -8,6 +8,7 @@
   "scripts": {
     "start": "bash scripts/start-all-dev.sh",
     "dev": "npm run frontend:dev",
+    "dev:docker": "npm run frontend:dev & npm run backend:dev",
     "build": "npm run frontend:build",
     "pre-push": "lint-staged",
     "pre-release": "npm run lint:fix && npm run format:fix && npm run test && npm run test:ui",

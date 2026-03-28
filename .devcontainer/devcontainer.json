@@ -1,21 +1,44 @@
 {
     "name": "Tududi Development Environment",
     "build": {
-        "dockerfile": "Dockerfile"
+        "dockerfile": "../Dockerfile",
+        "context": "..",
+        "target": "development"
     },
-    "features": {},
+    "features": {
+        "ghcr.io/devcontainers/features/common-utils:2": {
+		    "username": "app",
+            "configureZshAsDefaultShell": true,
+            "ohMyZshTheme": "agnoster",
+            "ohMyZshPlugins": [
+                "git",
+                "gh",
+                "history",
+                "docker",
+                "docker-compose",
+                "node",
+                "npm",
+                "nvm",
+                "yarn",
+                "virtualenv",
+                "vscode"
+            ]
+        }
+    },
     "customizations": {
         "vscode": {
             "extensions": [
                 "dbaeumer.vscode-eslint",
                 "esbenp.prettier-vscode",
-                "dbaeumer.markdown-preview-github-styles",
+                "bierner.markdown-preview-github-styles",
                 "bradlc.vscode-tailwindcss",
                 "ms-vscode.vscode-typescript-next",
                 "formulahendry.auto-rename-tag",
                 "streetsidesoftware.code-spell-checker",
                 "bierner.markdown-mermaid",
-                "github.vscode-pull-request-github"
+                "github.vscode-pull-request-github",
+                "github.vscode-github-actions",
+                "ms-vscode-remote.remote-containers"
             ],
             "settings": {
                 "editor.formatOnSave": true,
@@ -54,6 +77,6 @@
             "onAutoForward": "silent",
             "label": "Frontend"
         }
-    },
-    "postCreateCommand": "chmod +x .devcontainer/post-create.sh; .devcontainer/post-create.sh"
+     },
+     "postCreateCommand": "chown -R app /workspaces"
 }

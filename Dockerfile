@@ -1,4 +1,4 @@
-###############
+############### 
 # BUILD STAGE #
 ###############
 # Use Node.js Alpine for minimal build image
@@ -27,9 +27,6 @@ COPY . ./
 
 # Build frontend
 RUN NODE_ENV=production npm run frontend:build
-
-# Run backend tests
-# RUN npm run backend:test
 
 # Cleanup
 RUN npm cache clean --force && \
@@ -136,3 +133,102 @@ HEALTHCHECK --interval=60s --timeout=3s --start-period=10s --retries=2 \
 
 WORKDIR /app/backend
 ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]
+
+
+#####################
+# Development stage #
+#####################
+FROM node:22-alpine AS development
+
+# ENV APP_UID=1001
+# ENV APP_GID=1001
+
+# Install runtime dependencies (including build tools for dev)
+RUN apk add --no-cache \
+    python3 \
+    py3-pip \
+    pre-commit \
+    bash \
+    openssl \
+    make \
+    g++ \
+    sqlite-dev \
+    sqlite \
+    git \
+    github-cli \
+    dumb-init \
+    su-exec && \
+    rm -rf /tmp/* /var/cache/apk/*
+
+# # Create app user and group
+# RUN addgroup -g ${APP_GID} app && \
+#     adduser -D -u ${APP_UID} -G app app
+
+
+# # Set working directory
+# WORKDIR /app
+
+# RUN npm install -g npm@11.6.4
+
+# # Copy full source code (for hot reloading)
+# COPY . ./
+
+# # Copy backend start script
+# RUN chmod +x /app/backend/cmd/start.sh
+
+# # Copy entrypoint
+# COPY ./scripts/docker-entrypoint.sh /app/scripts/docker-entrypoint.sh
+# RUN chmod +x /app/scripts/docker-entrypoint.sh
+
+# # Copy frontend build from builder stage (or rebuild in dev)
+# COPY --from=builder --chown=app:app /app/dist ./backend/dist
+# COPY --from=builder --chown=app:app /app/public/favicon* ./backend/dist/
+# COPY --from=builder --chown=app:app /app/public/manifest.json ./backend/dist/
+# COPY --from=builder --chown=app:app /app/public/locales ./backend/dist/locales
+
+
+# # Create necessary directories
+# RUN mkdir -p /app/backend/db /app/backend/certs /app/backend/uploads && \
+#     chown -R app:app /app
+
+# # Install ALL dependencies (including devDependencies)
+# RUN npm install --no-audit --no-fund && \
+#     ln -s /app/node_modules /app/backend/node_modules
+
+# Update npm to latest version
+RUN npm install -g npm@11.6.4
+
+WORKDIR /tmp
+
+COPY package.json package-lock.json ./
+
+RUN npm install --no-audit --no-fund
+
+# Expose both frontend and backend ports for dev
+EXPOSE 3002 8080
+
+# Development environment variables
+ENV NODE_ENV=development \
+    DB_FILE="db/development.sqlite3" \
+    PORT=3002 \
+    TUDUDI_ALLOWED_ORIGINS="http://localhost:8080,http://localhost:3002,http://127.0.0.1:8080,http://127.0.0.1:3002" \
+    TUDUDI_SESSION_SECRET="dev-session-secret-change-in-prod" \
+    TUDUDI_USER_EMAIL="dev@tududi.local" \
+    TUDUDI_USER_PASSWORD="devpassword123" \
+    TUDUDI_TRUST_PROXY=false \
+    DISABLE_TELEGRAM=true \
+    DISABLE_SCHEDULER=true \
+    TUDUDI_UPLOAD_PATH="/app/backend/uploads" \
+    SWAGGER_ENABLED=true \
+    FF_ENABLE_BACKUPS=false \
+    FF_ENABLE_CALENDAR=true \
+    FF_ENABLE_HABITS=true
+
+USER app
+# WORKDIR /app
+
+# Development entrypoint (can be overridden when running container)
+# Note: For true dev mode with hot reload, you may want to override CMD:
+# docker run -it --rm -p 3002:3002 -p 8080:8080 -v $(pwd):/app -v /app/node_modules tududi:development bash
+# ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]
+# CMD ["npm", "run", "start"]
