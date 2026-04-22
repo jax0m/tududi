@@ -1,0 +1,77 @@
+{
+    "name": "Tududi Development Environment",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "remoteUser": "app",
+    "features": {
+        "ghcr.io/devcontainers/features/common-utils:2": {
+            "username": "app",
+            "configureZshAsDefaultShell": true,
+            "ohMyZshTheme": "agnoster",
+            "ohMyZshPlugins": [
+                "git",
+                "gh",
+                "history",
+                "docker",
+                "docker-compose",
+                "virtualenv",
+                "vscode"
+            ]
+        }
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "bierner.markdown-mermaid",
+                "bradlc.vscode-tailwindcss",
+                "dbaeumer.markdown-preview-github-styles",
+                "dbaeumer.vscode-eslint",
+                "esbenp.prettier-vscode",
+                "formulahendry.auto-rename-tag",
+                "github.vscode-github-actions",
+                "github.vscode-pull-request-github",
+                "ms-vscode-remote.remote-containers",
+                "ms-vscode.vscode-typescript-next",
+                "streetsidesoftware.code-spell-checker"
+            ],
+            "settings": {
+                "editor.formatOnSave": true,
+                "editor.codeActionsOnSave": {
+                    "source.fixAll.eslint": "explicit"
+                },
+                "eslint.validate": [
+                    "javascript",
+                    "typescript",
+                    "javascriptreact",
+                    "typescriptreact"
+                ],
+                "files.associations": {
+                    "*.ts": "typescript",
+                    "*.tsx": "typescriptreact",
+                    "*.js": "javascript",
+                    "*.jsx": "javascriptreact"
+                },
+                "editor.defaultFormatter": "esbenp.prettier-vscode",
+                "prettier.configPath": "./prettier.config.js",
+                "files.exclude": {
+                    "**/node_modules": true,
+                    "**/dist": true,
+                    "**/coverage": true
+                }
+            }
+        }
+    },
+    "forwardPorts": [3002, 8080],
+    "portsAttributes": {
+        "3002": {
+            "onAutoForward": "silent",
+            "label": "Backend API"
+        },
+        "8080": {
+            "onAutoForward": "silent",
+            "label": "Frontend"
+        }
+    },
+    "postCreateCommand": "chmod +x .devcontainer/post-create.sh; .devcontainer/post-create.sh"
+}
