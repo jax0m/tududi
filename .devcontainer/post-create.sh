@@ -1,100 +1,122 @@
 #!/bin/bash
 set -euo pipefail
 
-# Install dependencies
-echo "Attempting dos2unix in case some of the line endings in files were CRLF"
-dos2unix -q **/*
-
-# Create necessary directories
-echo "Attempting to create directories if not as expected"
-mkdir -p ./backend/db ./backend/uploads
-
 echo "========================================="
 echo "Tududi Development Server - Post Container Create"
 echo "========================================="
 echo "From location $(pwd)"
 
-# Create .env file if it doesn't exist, or extract password if it does
+# Step 1: Install dependencies
+echo ""
+echo "📦 Installing dependencies..."
+npm install
+echo "✅ Dependencies installed"
+
+# Step 2: Normalize line endings across OSs
+echo ""
+echo "🔧 Normalizing file line endings (handles CRLF/LF differences between OSs)..."
+dos2unix -q **/*
+echo "✅ Line endings normalized"
+
+# Step 3: Create necessary directories
+echo ""
+echo "📂 Creating required directories..."
+mkdir -p ./backend/db ./backend/uploads
+echo "✅ Directories created"
+
+# Step 4: Set up .env file
+echo ""
+echo "🔧 Setting up environment configuration..."
 if [ -f ./backend/.env ]; then
     echo "File ./backend/.env found, extracting credentials"
-    # Extract TUDUDI_USER_PASSWORD from existing .env file
+    # Extract values from existing .env file
+    TUDUDI_USER_EMAIL=$(grep "^TUDUDI_USER_EMAIL=" ./backend/.env | cut -d'=' -f2-)
     TUDUDI_USER_PASSWORD=$(grep "^TUDUDI_USER_PASSWORD=" ./backend/.env | cut -d'=' -f2-)
+    TUDUDI_SESSION_SECRET=$(grep "^TUDUDI_SESSION_SECRET=" ./backend/.env | cut -d'=' -f2-)
     if [ -n "$TUDUDI_USER_PASSWORD" ]; then
-        echo "✅ Extracted existing password from .env"
+        echo "✅ Extracted existing credentials from .env"
     else
         echo "⚠️  Password not found in .env"
     fi
 else
-    echo "File ./backend/.env not found, Creating:"
-    echo ""
-    echo "🔧 Creating .env file..."
-    cat > ./backend/.env <<ENVEOF
-NODE_ENV=development
+    echo "File ./backend/.env not found, creating from .env.example..."
+    # Copy .env.example as base, then replace dynamic values
+    cp ./backend/.env.example ./backend/.env
 
-HOST=0.0.0.0
-PORT=3002
+    # Replace TUDUDI_SESSION_SECRET with a random one (or use env var if set)
+    if [ -n "${TUDUDI_SESSION_SECRET:-}" ]; then
+        echo "Using session secret from environment variable"
+        sed -i "s|^TUDUDI_SESSION_SECRET=.*|TUDUDI_SESSION_SECRET=${TUDUDI_SESSION_SECRET}|" ./backend/.env
+    else
+        echo "Generating new session secret"
+        sed -i "s|^TUDUDI_SESSION_SECRET=.*|TUDUDI_SESSION_SECRET=$(openssl rand -hex 64)|" ./backend/.env
+    fi
 
-DB_FILE=db/database.sqlite3
+    # Replace TUDUDI_USER_EMAIL (or use env var if set)
+    if [ -n "${TUDUDI_USER_EMAIL:-}" ]; then
+        echo "Using email from environment variable: ${TUDUDI_USER_EMAIL}"
+        sed -i "s|^TUDUDI_USER_EMAIL=.*|TUDUDI_USER_EMAIL=${TUDUDI_USER_EMAIL}|" ./backend/.env
+    else
+        echo "Using default email: admin@example.com"
+        sed -i "s|^TUDUDI_USER_EMAIL=.*|TUDUDI_USER_EMAIL=admin@example.com|" ./backend/.env
+    fi
 
-FRONTEND_URL=http://localhost:8080
-BACKEND_URL=http://localhost:3002
+    # Replace TUDUDI_USER_PASSWORD with a random one (or use env var if set)
+    if [ -n "${TUDUDI_USER_PASSWORD:-}" ]; then
+        echo "Using password from environment variable"
+        sed -i "s|^TUDUDI_USER_PASSWORD=.*|TUDUDI_USER_PASSWORD=${TUDUDI_USER_PASSWORD}|" ./backend/.env
+    else
+        echo "Generating new password"
+        sed -i "s|^TUDUDI_USER_PASSWORD=.*|TUDUDI_USER_PASSWORD=$(openssl rand -hex 32)|" ./backend/.env
+    fi
 
-TUDUDI_SESSION_SECRET=${TUDUDI_SESSION_SECRET:-$(openssl rand -hex 64)}
-
-TUDUDI_USER_EMAIL=${TUDUDI_USER_EMAIL:-admin@example.com}
-TUDUDI_USER_PASSWORD=${TUDUDI_USER_PASSWORD:-$(openssl rand -hex 32)}
-
-ENABLE_EMAIL=false
-DISABLE_TELEGRAM=true
-REGISTRATION_TOKEN_EXPIRY_HOURS=24
-
-TUDUDI_ALLOWED_ORIGINS=http://localhost:8080
-TUDUDI_TRUST_PROXY=false
-
-SWAGGER_ENABLED=true
-
-FF_ENABLE_BACKUPS=false
-FF_ENABLE_CALENDAR=false
-FF_ENABLE_HABITS=false
-FF_ENABLE_MCP=false
-
-RATE_LIMITING_ENABLED=false
-
-TUDUDI_UPLOAD_PATH=backend/uploads
-ENVEOF
-    echo "✅ Created backend/.env file"
+    echo "✅ Created backend/.env from .env.example"
     echo ""
     echo "⚠️  IMPORTANT: Change TUDUDI_USER_PASSWORD in production!"
     echo ""
-    TUDUDI_USER_PASSWORD=$(grep "^TUDUDI_USER_PASSWORD=" ./backend/.env | cut -d'=' -f2-)
+
+    # Extract final values
     TUDUDI_USER_EMAIL=$(grep "^TUDUDI_USER_EMAIL=" ./backend/.env | cut -d'=' -f2-)
+    TUDUDI_USER_PASSWORD=$(grep "^TUDUDI_USER_PASSWORD=" ./backend/.env | cut -d'=' -f2-)
 fi
 
-# Check if database already exists
-DB_FILE=$(grep "^DB_FILE=" ./backend/.env | cut -d'=' -f2-)
-if [ -n "$DB_FILE" ]; then
-    # Check if database already exists
-    if [ -f "./backend/$DB_FILE" ]; then
-        echo "✅ Database already exists, skipping initialization"
-    else
-        echo ""
-        echo "📦 Initializing database..."
-        npm run db:init
-        echo ""
-        if [ -n "$TUDUDI_USER_PASSWORD" ]; then
-            echo "✅ Password exists for user creation..."
-            echo "👤 Creating test user..."
-            npm run user:create admin@example.com "$TUDUDI_USER_PASSWORD" true
-        else
-            echo "⚠️  Password not found, you will have to create your own user manually"
-        fi
-    fi
+# Step 5: Initialize database if needed
+echo ""
+echo "📦 Setting up database..."
+DB_PATH="db/development.sqlite3"
+
+# Use codebase default (matches backend/config/config.js)
+if [ -f "./backend/$DB_PATH" ]; then
+    echo "✅ Database already exists at ./backend/$DB_PATH, skipping initialization"
 else
-    echo "⚠️  Database variable not found in environment variables, check env file"
+    echo "🗄️  Database not found, running initialization..."
+    npm run db:init
+    echo ""
+
+    if [ -n "$TUDUDI_USER_PASSWORD" ]; then
+        echo "👤 Creating test user..."
+        npm run user:create "$TUDUDI_USER_EMAIL" "$TUDUDI_USER_PASSWORD" true
+    else
+        echo "⚠️  No password found. Database created but you'll need to create a user manually:"
+        echo "   npm run user:create"
+    fi
 fi
 
+# Final summary
+echo ""
+echo "========================================="
+echo "✅ Container Setup Complete"
+echo "========================================="
 echo ""
 echo "🔐 Login credentials:"
-echo "   Email: ${TUDUDI_USER_EMAIL:-(see .env file)}"
-echo "   Password: ${TUDUDI_USER_PASSWORD:-(see .env file)}"
-echo "✅ Container ready for use"
+echo "   Email: ${TUDUDI_USER_EMAIL:-(see ./backend/.env)}"
+echo "   Password: ${TUDUDI_USER_PASSWORD:-(see ./backend/.env)}"
+echo ""
+echo "📝 Next steps:"
+echo "   1. Start the dev servers:"
+echo "      - Backend:  npm run backend:dev"
+echo "      - Frontend: npm run frontend:dev"
+echo "   2. Or run both: npm start"
+echo "   3. Open http://localhost:8080 in your browser"
+echo ""
+echo "📚 Docs: docs/development-workflow.md"

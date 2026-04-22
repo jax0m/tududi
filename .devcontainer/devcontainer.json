@@ -62,16 +62,5 @@
             }
         }
     },
-    "forwardPorts": [3002, 8080],
-    "portsAttributes": {
-        "3002": {
-            "onAutoForward": "silent",
-            "label": "Backend API"
-        },
-        "8080": {
-            "onAutoForward": "silent",
-            "label": "Frontend"
-        }
-    },
     "postCreateCommand": "chmod +x .devcontainer/post-create.sh; .devcontainer/post-create.sh"
 }

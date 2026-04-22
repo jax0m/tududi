@@ -88,6 +88,25 @@ npm start
 # Logs from both processes interleaved
 ```
 
+### Dev Container Setup (Automated)
+
+If you're using the VS Code Dev Container configuration (recommended for consistent development environments), many of these setup steps are automated:
+
+- **`npm install`** — dependencies are installed automatically on container create
+- **`npm run db:init`** — database is initialized if not present
+- **`npm run user:create`** — test user is created with the password from `.env`
+- **`.env` file** — created from `.env.example` with dynamic values (email, password, session secret)
+
+The dev container will read credentials from environment variables if set (`TUDUDI_USER_EMAIL`, `TUDUDI_USER_PASSWORD`, `TUDUDI_SESSION_SECRET`), otherwise it generates them automatically.
+
+**Note:** The `.env` file is still created at `./backend/.env` and can be edited manually. Changes to `.env` require a server restart to take effect.
+
+To use the Dev Container:
+1. Open the project in VS Code
+2. Click "Reopen in Container" (or use the command palette: `Dev Containers: Reopen in Container`)
+3. Wait for the post-create script to complete
+4. Start the dev servers as described below
+
 ### Accessing the Application
 
 Open http://localhost:8080 in your browser.
@@ -533,19 +552,6 @@ docker run \
 ---
 
 ## Troubleshooting
-
-### Port Already in Use
-
-```bash
-# Find process using port 3002
-lsof -ti:3002
-
-# Kill process
-kill -9 $(lsof -ti:3002)
-
-# Or use different port
-PORT=3003 npm run backend:dev
-```
 
 ### Database Locked
 
