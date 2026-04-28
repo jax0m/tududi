@@ -70,6 +70,16 @@ else
         sed -i "s|^TUDUDI_USER_PASSWORD=.*|TUDUDI_USER_PASSWORD=$(openssl rand -hex 32)|" ./backend/.env
     fi
 
+    # Set TUDUDI_TRUST_PROXY to true (required for Docker/reverse proxy setups)
+    # This is the new default in .env.example and enables Express to correctly
+    # read client IPs from X-Forwarded-For headers
+    if grep -q "^TUDUDI_TRUST_PROXY=" ./backend/.env; then
+        echo "TUDUDI_TRUST_PROXY is already set in .env"
+    else
+        echo "Adding TUDUDI_TRUST_PROXY=true to .env (required for Docker setups)"
+        echo "TUDUDI_TRUST_PROXY=true" >> ./backend/.env
+    fi
+
     echo "✅ Created backend/.env from .env.example"
     echo ""
     echo "⚠️  IMPORTANT: Change TUDUDI_USER_PASSWORD in production!"
