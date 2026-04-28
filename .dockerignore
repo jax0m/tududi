@@ -12,6 +12,9 @@
 *.swp
 *.swo
 *~
+# .env files (security — credentials must never be in Docker images)
+.env
+**/.env
 **/.env.local
 **/.env.development
 **/.env.test
